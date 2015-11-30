@@ -113,6 +113,94 @@ def handwritingClassTest():#手写数字识别系统的测试
             errorCount+=1.0
     print "the Total error rate is: %f" % (errorCount/float(mtest))
 
+
+
+
+
+#以下内容为统计学习方法中的优化
+
+def createKDTree(dataSet,depth=0):#创建KD树，采用kd树来优化knn，对数据的每一维进行切分构建二叉树
+    qiefendian = depth%len(dataSet[0])#将depth对数据集的分量个数取余，循环选择切分点
+    median = GetMedian(dataSet,qiefendian)
+    rootNode = {}#创建根节点,其中depth表示深度，因为二叉树切分的顺序是按照数据集的顺序，所以depth就表示切分的索引
+    left = []
+    right = []
+    if len(dataSet) == 1:#此时数据集只有1个，则将其作为叶节点
+        rootNode['leaf'] = dataSet[0]#叶节点的标志就是字典具有leaf这个key，将该数据放入
+        return rootNode
+    rootNode = {'left':{},'right':{},'depth':depth,'range':median}
+    for data in dataSet:
+        if data[qiefendian] <= median:
+            left.append(data)
+        else:
+            right.append(data)
+    depth+=1
+    if left:
+        rootNode['left']['value'] = createKDTree(left,depth)
+    if right:
+        rootNode['right']['value'] = createKDTree(right,depth)
+    return rootNode
+
+
+
+
+
+
+def GetMedian(dataSet,depth):#获取列表的中位数
+    varlist = []
+    for index in range(len(dataSet)):
+        varlist.append(dataSet[index][depth])
+    varlist.sort()
+    return varlist[(len(varlist)-1)/2]
+
+
+def search_K_NearestNeighbor(data,KDTree,k):#该函数用于查找最近邻的k个数据，输入参数分别为需要分类的数据，KD树，K临近中的k取值
+    #现阶段只实现了查找最邻近的点
+    result = []
+    point,mindistance = searchNearest(data,KDTree,0,result,k)#找到kd树中分类到最近的点
+    print point
+
+
+
+def searchNearest(data,Tree, depth,result,k):#递归搜索KD树找到该目标点属于的子节点，并回溯查找父节点查看是不是有更近的点,传入参数中最后一个用于存储前k个点
+    qiefendian = depth%len(data)
+    if Tree.has_key('leaf'):
+        point = Tree['leaf']
+        data = array(data)
+        point = array(point)
+        diffMat = data - point
+        sqDiffMat = diffMat **2
+        sqDistances = sqDiffMat.sum()
+        distances = sqDistances**0.5
+        result.append(point)
+        return point,distances#返回KD树中叶节点以及其和目标点的距离
+    depth+=1
+    if data[qiefendian] <= Tree['range']:
+        point,mindistance = searchNearest(data,Tree['left']['value'],depth,result,k)
+        if mindistance >= abs(data[qiefendian] - Tree['range']):#将最短距离和该点到切分点的距离做比较，
+        # 若最短距离更大，则可能该父节点的另一个子节点存在最短距离
+
+            pointvar,distance = searchNearest(data,Tree['right']['value'],depth,result,k)
+            if distance < mindistance:
+                mindistance = distance
+                point = pointvar
+    else:
+        point,mindistance = searchNearest(data,Tree['right']['value'],depth,result,k)
+        if mindistance >= abs(data[qiefendian] - Tree['range']):
+            pointvar,distance = searchNearest(data,Tree['left']['value'],depth,result,k)
+            if distance < mindistance:
+                mindistance = distance
+                point = pointvar
+
+    return point,mindistance
+
+
+
+
+
+
+if __name__ == '__main__':
+
 #datingDataMat,datingLabels = file2matrix('datingTestSet.txt')
 #fig = plt.figure()
 #ax = fig.add_subplot(111)
@@ -125,4 +213,15 @@ def handwritingClassTest():#手写数字识别系统的测试
 #datingClassTest()
 #testVector = img2vector('testDigits/0_13.txt')
 #print testVector[0,0:31]
-handwritingClassTest()
+#handwritingClassTest()
+    dataSet = [[2,3],[5,4],[9,6],[4,7],[8,1],[7,2]]
+    tree = createKDTree(dataSet,0)
+    search_K_NearestNeighbor([3,4],tree,1)
+
+
+
+
+
+
+
+
