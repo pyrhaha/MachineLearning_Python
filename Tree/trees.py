@@ -83,6 +83,7 @@ def createTree(dataSet,labels):#使用递归创建树,传入的参数中labels�
     for value in uniqueVals:
         subLabels = labels[:]#由于列表是引用传递，避免对列表的修改，拷贝一个新的
         myTree[bestFeatLabel][value] = createTree(splitDataSet(dataSet,bestFeat,value),subLabels)
+
     return myTree
 
 def classify(inputTree,featLabels,testVec):#使用决策树的分类函数，参数为构建的决策树，各特征值的标签，需要分类的数据集
