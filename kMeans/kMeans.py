@@ -51,16 +51,51 @@ def kMeans(dataSet,k,distMeas = distEclud,createCent = randCent):
             centroids[cent,:] = mean(ptsInClust,axis=0)#axis等于0表示对一列求平均值，即对一个特征的所有取值求平均值
     return centroids,clusterAssment#centroids存储的是不同簇类的特征值质心的取值，每一列表示一个特征，每一行表示一个簇类，clusterAssment存储的是所有训练集的所属簇类（第一列）和其与质心之间的误差（第二列）
 
+#二分K均值聚类算法，是指从一个簇类开始，每一次将一个簇类分成两个，减小误差，直到达到k个聚类
+def binaryKMeans(dataSet,k,distMeans = distEclud):
+    m = shape(dataSet)[0]
+    clusterAssment = mat(zeros((m,2)))#和上一个函数一样用于存储每个数据集的所属簇类和误差
+    centroid0 = mean(dataSet,axis=0).tolist()[0]#初始化簇类，一开始只有一个簇类，所以质点就是所有训练集各特征的平均值
+    centList = [centroid0]
+    for j in range(m):
+        clusterAssment[j,1] = distMeans(mat(centroid0),dataSet[j,:])**2#计算这时的误差
+    while (len(centList) < k):#不断循环直到达到k个簇类
+        lowestSSE = inf
+        for i in range(len(centList)):
+            childDataSet = dataSet[nonzero(clusterAssment[:,0]== i)[0]][0]#获取数据集中属于该簇类的数据集
+            centroidMat,splitCluster = kMeans(childDataSet,2,distMeans)#将一个簇类分成两个簇类
+            errorSplit = float(sum(splitCluster[:,1]))#将重新分簇类的数据集中误差求和
+            errorNoSplit = sum(clusterAssment[nonzero(clusterAssment[:,0].A != i)[0],1])#为已正确分簇的数据集求误差和
+            print "the error of split is ",errorSplit,",error of nonsplit is ",errorNoSplit
+            if (errorNoSplit + errorSplit) < lowestSSE:#如果其他簇的误差和该簇分开后的簇的和比最小的误差要小则将其赋值为最小的误差
+                bestCentSplit = i#此时i为最好的需要切分的簇
+                bestNewCent = centroidMat#存储此时切分后的两个簇的质点
+                bestDataCluster = splitCluster.copy()#存储簇被切分的那些数据集此时的簇索引以及误差
+                lowestSSE = errorNoSplit + errorSplit
+        bestDataCluster[nonzero(bestDataCluster[:,0] == 0)[0],0] = bestCentSplit#将被切分簇里的数据集中所属的簇进行修改，因为这是讲一个簇分成两个簇，所以将0簇赋值为原来未分之前簇的索引
+        bestDataCluster[nonzero(bestDataCluster[:,0] == 1)[0],0] = len(centList)#将1簇增加为len(centList)，因为之前的编号是0~len(centList)-1，所以相当于新加了一个
+        print "the best cluster to split is ",float(bestCentSplit)
+        print "the len of dataSet to be split is ",float(len(bestDataCluster))
+        centList[bestCentSplit] = bestNewCent[0,:].tolist()[0]#将原来未切分的簇替换成切分后的第一个簇
+        centList.append(bestNewCent[1,:].tolist()[0])#将切分后的第二个簇加入centList
+        clusterAssment[nonzero(clusterAssment[:,0] == bestCentSplit)[0]] = bestDataCluster
+    return mat(centList),clusterAssment
 
 
-
-
-dataMat = mat(loadDataSet('testSet.txt'))
-#print randCent(dataMat,2)
-#print disEclud(dataMat[0],dataMat[1])
-myCentroids,clusterAssing = kMeans(dataMat,4)
+# dataMat = mat(loadDataSet('testSet.txt'))
+# #print randCent(dataMat,2)
+# #print disEclud(dataMat[0],dataMat[1])
+# myCentroids,clusterAssing = kMeans(dataMat,4)
+# fig = plt.figure()
+# ax = fig.add_subplot(111)
+# ax.scatter(dataMat[:,0],dataMat[:,1])#画点
+# ax.scatter(myCentroids[:,0],myCentroids[:,1],c = 'red')
+# plt.show()
+dataMat = mat(loadDataSet('testSet2.txt'))
+centList,myNewAssments = binaryKMeans(dataMat,3)
+print centList
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.scatter(dataMat[:,0],dataMat[:,1])#画点
-ax.scatter(myCentroids[:,0],myCentroids[:,1],c = 'red')
+ax.scatter(centList[:,0],centList[:,1],c = 'red')
 plt.show()

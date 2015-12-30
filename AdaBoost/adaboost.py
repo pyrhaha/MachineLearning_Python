@@ -118,7 +118,7 @@ def plotROC(predStreangths, classLabels):#第一个参数为经过AdaBoost或SVM
     numPosClass = sum(array(classLabels) == 1.0)#使用数组过滤来计算正例的个数
     yStep = 1/float(numPosClass)#坐标纵轴的步长为正例个数的倒数，即当所有的正例都被找到则y=0
     xStep = 1/float(len(classLabels) - numPosClass)#坐标纵轴的步长为反例个数的倒数
-    sortedIndicies = predStreangths.argsort()#对分类器计算值从小到大进行排序，获取排序后的索引值
+    sortedIndicies = predStreangths.argsort()#对分类器计算值从小到大进行排序，获取排序后的索引值,从小到大排序使得尽可能将标签为1的项放在后面，这样如果是好的分类器会先迅速的减小x轴的值，然后碰到一个标签为1的减小y轴的值，画的图越接近左上角越好
     fig = plt.figure()
     fig.clf()
     ax = plt.subplot(111)
